@@ -12,8 +12,11 @@ import VueApollo from 'vue-apollo'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import './assets/css/style.scss'
+import PlusButton from '@/components/icons/PlusButton.vue'
+
 
 Vue.use(ElementUI)
+Vue.component('plus-button', PlusButton)
 Vue.config.productionTip = false
 
 const uri = `${process.env.VUE_APP_URI}/graphql`

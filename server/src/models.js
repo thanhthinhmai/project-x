@@ -21,6 +21,14 @@ module.exports.Folder = Folder
 module.exports.Team = Folder.discriminator('Team', new Schema({
 }, {timestamps: true}))
 
+module.exports.Group = buildModel('Group', {
+    team: { type: ObjectId, ref: 'Team' },
+    name: String,
+    initials: String,
+    avatarColor: String,
+    users: [{ type: ObjectId, ref: 'User' }],
+})
+
 module.exports.User = buildModel('User', {
     name: {
         type: String,

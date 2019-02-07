@@ -2,8 +2,10 @@ const { GraphQLScalarType } = require('graphql')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const moment = require('moment')
+const mongoose = require('mongoose')
+const ObjectId = mongoose.Types.ObjectId
 
-const { User, Team } = require('./models')
+const { User, Team, Folder, Group } = require('./models')
 const JWT_SECRET = process.env.JWT_SECRET
 const { getUserId } = require('./utils')
 
@@ -21,6 +23,23 @@ const resolvers = {
             const userId = getUserId(context)
             const user = await User.findById(userId)
             return await Team.findById(user.team)
+        },
+        async getFolders(_, {parent}, context) {
+            const userId = getUserId(context)
+            if (parent) {
+                return await Folder.find({parent})
+            } else {
+                const user = await User.findById(userId)
+                console.log(user)
+                const groups = await Group.find({users: ObjectId(userId)}, '_id')
+                const ids = groups.map(o => o._id).concat(['External User', 'Collaborator'].includes(user.role)
+                    ? [ObjectId(userId)] : [ObjectId(userId, user.team)])
+                return await Folder.find({'shareWith.item': ids}).populate('shareWith')
+            }
+        },
+        async getFolder(_, {id}, context) {
+            const userId = getUserId(context)
+            return await Folder.findById(id).populate('shareWith')
         }
     },
     Mutation: {
@@ -76,6 +95,19 @@ const resolvers = {
             }
             const token = jwt.sign({id: user.id, email}, JWT_SECRET)
             return {token, user}
+        },
+        async createFolder(_, {parent, name}, context) {
+            const userId = getUserId(context)
+            const folder = await Folder.create({
+                name,
+                parent: parent || undefined,
+                shareWith: parent ? [] : [{
+                    kind: 'Team',
+                    item: (await User.findById(userId)).team
+                }]
+            })
+            return await
+            Folder.findById(folder.id).populate('shareWith.item')
         }
     },
     Date: new GraphQLScalarType({
